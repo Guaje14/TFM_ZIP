@@ -9,6 +9,7 @@ import plotly.express as px
 import pycountry
 import matplotlib.pyplot as plt
 import numpy as np
+import streamlit as st
 
 # Función para generar un radar según el tipo y método seleccionado
 def generate_radar_matplotlib(rA_vals, rB_vals, selected_stats, playerA, playerB, chart_type_val, textA, textB):
@@ -165,6 +166,7 @@ COUNTRY_MAP = {
 }
 
 # Función para convertir un código de país en su código ISO3 
+@st.cache_data(show_spinner=False)
 def get_iso3(code):
 
     # Validar si el código de país es nulo o inexistente

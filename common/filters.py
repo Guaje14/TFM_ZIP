@@ -17,6 +17,7 @@ def split_multi_value(value):
     return [v.strip() for v in str(value).split(",") if v.strip()]
 
 # Función para construir un mapa fiable equipo -> liga
+@st.cache_data(ttl=2_592_000)  # 30 días aprox
 def build_team_league_map(df, comp_col="stats_Comp", team_col="stats_Squad"):
     
     # Diccionario final equipo -> liga
@@ -34,6 +35,7 @@ def build_team_league_map(df, comp_col="stats_Comp", team_col="stats_Squad"):
     return team_to_league
 
 # Función para obtener opciones únicas de ligas
+@st.cache_data(ttl=2_592_000)  # 30 días aprox
 def get_league_options(df, comp_col="stats_Comp", team_col="stats_Squad"):
     
     # Construir mapa fiable
@@ -45,6 +47,7 @@ def get_league_options(df, comp_col="stats_Comp", team_col="stats_Squad"):
     return ["All"] + leagues
 
 # Función para obtener equipos válidos para una liga seleccionada
+@st.cache_data(ttl=2_592_000)  # 30 días aprox
 def get_team_options(df, selected_league="All", comp_col="stats_Comp", team_col="stats_Squad"):
     
     # Construir mapa fiable
