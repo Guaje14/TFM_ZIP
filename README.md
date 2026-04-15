@@ -34,7 +34,7 @@ La aplicación ha sido desarrollada en **Python** y utiliza las siguientes libre
 * **LanusStats** para la extracción de datos desde **Fbref**.
 * **openpyxl**, **fpdf2**, **requests**, **scipy**, **python-dotenv** e **IPython** como librerías auxiliares para exportación, peticiones, cálculos complementarios, gestión de configuración y trabajo interactivo.
 * **sqlalchemy**, **psycopg2-binary** e **bcrypt** para conexión y gestión de bases de datos, integración con PostgreSQL y cifrado seguro de contraseñas.
-
+* **pycountry** para la normalización y consulta de países, códigos ISO y metadatos geográficos utilizados en filtros, visualizaciones y tratamiento de nacionalidades.
 
 Las dependencias se pueden instalar con:
  

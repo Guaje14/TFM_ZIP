@@ -13,3 +13,4 @@ scipy
 sqlalchemy
 psycopg2-binary
 bcrypt
+pycountry
