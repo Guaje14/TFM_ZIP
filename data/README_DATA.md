@@ -7,7 +7,6 @@ Todos los archivos ya vienen precargados y listos para usar; este README describ
 
 | Archivo | Formato | Descripción breve |
 |---------|---------|-----------------|
-| acces_log.xlsx | Excel | Control de acceso de los usuarios |
 | lineups_register.xlsx | Excel | Alineaciones añadidas con equipos, posiciones, competiciones, coordenadas, sistema de juego y usuario que las insertó |
 | list_players_register.xlsx | Excel | Jugadores añadidos a listas con equipo, posición, competición, usuario, nombre de la lista y observaciones (fichaje, observar, proyección) |
 | message_from_users.xlsx | Excel | Mensajes enviados al administrador que sugieren la importación de nuevas competiciones desde Fbref |
