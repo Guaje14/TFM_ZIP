@@ -521,89 +521,89 @@ def page_radar():
         # Mostrar gráfico en Streamlit
         radar_placeholder.plotly_chart(fig, use_container_width=True)
 
-        # Reiniciar formularios si se solicita
-        if st.button("🔄 Reset Forms"):
-            st.session_state["radar_do_reset"] = True  
-            st.rerun()      
+    # Reiniciar formularios si se solicita
+    if st.button("🔄 Reset Forms"):
+        st.session_state["radar_do_reset"] = True  
+        st.rerun()      
 
-        # Renderizar botón de impresión
+    # Renderizar botón de impresión
+    components.html(
+    """
+    <button onclick="parent.window.print()" style="
+        padding:8px 14px;
+        font-size:14px;
+        cursor:pointer;
+        background-color:#2563eb;
+        color:white;
+        border:none;
+        border-radius:6px;">
+        🖨️ Print Page
+    </button>
+    """,
+    height=55
+    )                           
+
+    # Generar PDF si se solicita y existen datos válidos
+    if st.button("⚙️ Prepare PDF") and chart_type_val and playerA and playerB:
+
+        # Generar figura Matplotlib del radar
+        fig_mat = generate_radar_matplotlib(
+            rA_vals=rA_vals,
+            rB_vals=rB_vals,
+            selected_stats=selected_stats,
+            playerA=playerA,
+            playerB=playerB,
+            chart_type_val=chart_type_val,
+            textA=textA,
+            textB=textB
+        )
+
+        # Guardar figura en buffer como imagen PNG
+        radar_buffer = io.BytesIO()
+        fig_mat.savefig(radar_buffer, format="png", bbox_inches='tight', dpi=200)
+        plt.close(fig_mat)          
+        radar_buffer.seek(0)        
+
+        # Crear documento PDF
+        pdf_radar = FPDF()
+        pdf_radar.add_page()
+
+        # Configurar fuente del PDF
+        pdf_radar.add_font("DejaVu", "", str(ASSETSFONTS / "DejaVuSans.ttf"), uni=True)
+        pdf_radar.set_font("DejaVu", "", 12)
+
+        # Generar título del PDF
+        usuario_radar = st.session_state.get("user").username if st.session_state.get("user") else "Desconocido"
+        title_radar = f"User: {usuario_radar} | Radar Type: {chart_type_val} | Method: {method_val or 'N/A'}"
+        pdf_radar.multi_cell(0, 10, title_radar, align="C")
+        pdf_radar.ln(5)             
+        
+        # Insertar imagen del radar en el PDF
+        pdf_radar.image(radar_buffer, x=30, w=150)
+
+        # Añadir marca de agua o logo
+        logo_path_radar = get_watermark(alpha=10, user_obj=st.session_state.get("user"))
+        pdf_radar.image(logo_path_radar, x=55, y=100, w=100)
+
+        # Convertir PDF a bytes y codificar en base64
+        pdf_bytes_radar = pdf_radar.output(dest="S")
+        pdf_base64_radar = base64.b64encode(pdf_bytes_radar).decode("utf-8")
+
+        # Crear botón de descarga del PDF
         components.html(
-        """
-        <button onclick="parent.window.print()" style="
-            padding:8px 14px;
-            font-size:14px;
-            cursor:pointer;
-            background-color:#2563eb;
-            color:white;
-            border:none;
-            border-radius:6px;">
-            🖨️ Print Page
-        </button>
-        """,
-        height=55
-        )                           
-
-        # Generar PDF si se solicita y existen datos válidos
-        if st.button("⚙️ Prepare PDF") and chart_type_val and playerA and playerB:
-
-            # Generar figura Matplotlib del radar
-            fig_mat = generate_radar_matplotlib(
-                rA_vals=rA_vals,
-                rB_vals=rB_vals,
-                selected_stats=selected_stats,
-                playerA=playerA,
-                playerB=playerB,
-                chart_type_val=chart_type_val,
-                textA=textA,
-                textB=textB
-            )
-
-            # Guardar figura en buffer como imagen PNG
-            radar_buffer = io.BytesIO()
-            fig_mat.savefig(radar_buffer, format="png", bbox_inches='tight', dpi=200)
-            plt.close(fig_mat)          
-            radar_buffer.seek(0)        
-
-            # Crear documento PDF
-            pdf_radar = FPDF()
-            pdf_radar.add_page()
-
-            # Configurar fuente del PDF
-            pdf_radar.add_font("DejaVu", "", str(ASSETSFONTS / "DejaVuSans.ttf"), uni=True)
-            pdf_radar.set_font("DejaVu", "", 12)
-
-            # Generar título del PDF
-            usuario_radar = st.session_state.get("user").username if st.session_state.get("user") else "Desconocido"
-            title_radar = f"User: {usuario_radar} | Radar Type: {chart_type_val} | Method: {method_val or 'N/A'}"
-            pdf_radar.multi_cell(0, 10, title_radar, align="C")
-            pdf_radar.ln(5)             
-            
-            # Insertar imagen del radar en el PDF
-            pdf_radar.image(radar_buffer, x=30, w=150)
-
-            # Añadir marca de agua o logo
-            logo_path_radar = get_watermark(alpha=10, user_obj=st.session_state.get("user"))
-            pdf_radar.image(logo_path_radar, x=55, y=100, w=100)
-
-            # Convertir PDF a bytes y codificar en base64
-            pdf_bytes_radar = pdf_radar.output(dest="S")
-            pdf_base64_radar = base64.b64encode(pdf_bytes_radar).decode("utf-8")
-
-            # Crear botón de descarga del PDF
-            components.html(
-                f"""
-                <a href="data:application/pdf;base64,{pdf_base64_radar}" download="radar.pdf">
-                    <button style="
-                        padding:8px 14px;
-                        font-size:14px;
-                        cursor:pointer;
-                        background-color:#dc2626;
-                        color:white;
-                        border:none;
-                        border-radius:6px;">
-                        📄 Export Radar to PDF
-                    </button>
-                </a>
-                """,
-                height=55
-            )
+            f"""
+            <a href="data:application/pdf;base64,{pdf_base64_radar}" download="radar.pdf">
+                <button style="
+                    padding:8px 14px;
+                    font-size:14px;
+                    cursor:pointer;
+                    background-color:#dc2626;
+                    color:white;
+                    border:none;
+                    border-radius:6px;">
+                    📄 Export Radar to PDF
+                </button>
+            </a>
+            """,
+            height=55
+        )

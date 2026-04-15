@@ -75,9 +75,32 @@ def page_overview():
         "overview_team_filter": "All",
         "overview_league_filter": "All",
         "overview_minutes_filter": 0,
-        "overview_num_players_filter": 100
+        "overview_num_players_filter": 100,
+        
+        "overview_do_reset": False
     }
 
+    # Inicializar filtros en session_state si no existen
+    for key, value in overview_defaults.items():
+        st.session_state.setdefault(key, value)
+
+    # Verificar si se ha activado el reset de filtros
+    if st.session_state["overview_do_reset"]:
+
+        # Restaurar filtros a valores por defecto
+        st.session_state["overview_age_filter"] = "All"
+        st.session_state["overview_pos_filter"] = "All"
+        st.session_state["overview_team_filter"] = "All"
+        st.session_state["overview_league_filter"] = "All"
+        st.session_state["overview_minutes_filter"] = 0
+        st.session_state["overview_num_players_filter"] = 100
+
+        # Desactivar flag de reset
+        st.session_state["overview_do_reset"] = False
+
+        # Recargar aplicación
+        st.rerun()
+    
     # Inicializar filtros en session_state si no existen
     for key, value in overview_defaults.items():
         st.session_state.setdefault(key, value)
@@ -144,12 +167,11 @@ def page_overview():
 
     # Activar reset de filtros
     if st.button("🔄 Reset filters"):
-        st.session_state["overview_age_filter"] = "All"
-        st.session_state["overview_pos_filter"] = "All"
-        st.session_state["overview_team_filter"] = "All"
-        st.session_state["overview_league_filter"] = "All"
-        st.session_state["overview_minutes_filter"] = 0
-        st.session_state["overview_num_players_filter"] = 100
+
+        # Activar flag de reinicio
+        st.session_state["overview_do_reset"] = True
+
+        # Recargar aplicación
         st.rerun()
 
     # Separar visualmente sección de gráficos
