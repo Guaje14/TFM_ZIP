@@ -38,7 +38,7 @@ def page_home():
         st.write("")  
     
     # Crear columnas para centrar el mensaje informativo
-    welcome_msg_col1, welcome_msg_col2, welcome_msg_col3 = st.columns([1.5, 2, 2])
+    welcome_msg_col1, welcome_msg_col2, welcome_msg_col3 = st.columns([1.6, 2.3, 1.7])
     
     with welcome_msg_col2:
     

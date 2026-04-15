@@ -22,7 +22,7 @@ from common.plots import (
 
 # Importar funciones de datos y filtros
 from controllers.db_controller import load_stats_players_fbref, load_stats_players_fbref_with_score_table
-from common.filters import apply_player_filters
+from common.filters import apply_player_filters_overview_rk
 from controllers.logs_export_csv import log_download_event
 
 # Función que da cómo resultado la página Overview
@@ -104,7 +104,7 @@ def page_overview():
     overview_col1, overview_col2, overview_col3, overview_col4, overview_col5, overview_col6 = st.columns([2,2,2,2,2,2])
 
     # Aplicar filtros de jugadores reutilizables
-    df_overview = apply_player_filters(
+    df_overview = apply_player_filters_overview_rk(
         overview_df_players,
         overview_col1,
         overview_col2,
@@ -114,7 +114,7 @@ def page_overview():
         prefix="overview",
         checkbox=False
     )
-
+    
     # Crear slider para limitar número de jugadores
     with overview_col6:
 

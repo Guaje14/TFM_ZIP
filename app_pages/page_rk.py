@@ -24,7 +24,7 @@ from common.plots import (
 
 # Importar funciones de datos y filtros
 from controllers.db_controller import load_stats_players_fbref
-from common.filters import apply_player_filters
+from common.filters import apply_player_filters_overview_rk
 from controllers.logs_export_csv import log_download_event
 
 # Función que da cómo resultado la página Ranking
@@ -89,7 +89,7 @@ def page_rk():
     rk_col1, rk_col2, rk_col3, rk_col4, rk_col5, rk_col6 = st.columns([2,2,2,2,2,2])
 
     # Aplicar filtros reutilizables de jugadores
-    df_rk = apply_player_filters(
+    df_rk = apply_player_filters_overview_rk(
         rk_df_players,
         rk_col1,
         rk_col2,

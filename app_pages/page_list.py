@@ -25,10 +25,11 @@ from common.plots import (
     plot_positions
 )
 
-# Importar funciones de datos, identificación de usuarios y marca de agua
+# Importar funciones de datos y filtros
 from controllers.db_controller import load_stats_players_fbref
 from controllers.user_controller import load_users
 from common.pdf_utils import get_watermark
+from common.filters import apply_player_filters_lineup_list
     
 # Función que da cómo resultado la página List
 def page_list():
@@ -97,7 +98,7 @@ def page_list():
     # Definir constantes
     LISTS = ["GK", "DF", "LT", "MF", "EX", "FW"]
     EXCEL_FILE = DATA_DIR / "list_players_register.xlsx"
-    pos_order = ["All", "GK", "DF", "MF", "FW"]
+    pos_order = ["GK", "DF", "MF", "FW"]
     
     # Definir valores por defecto de session_state
     list_defaults = {
@@ -236,52 +237,14 @@ def page_list():
         
         st.subheader("Add Player")
 
-        # Seleccionar liga
-        league_options = ["All"] + sorted(list_df_players["stats_Comp"].unique())
-        league = st.selectbox(
-            "League",
-            league_options,
-            key="list_league_filter"
-        )
-
-        # Seleccionar equipo
-        equipos = sorted(
-            list_df_players[list_df_players["stats_Comp"] == league]["stats_Squad"].unique()
-        ) if league != "All" else sorted(list_df_players["stats_Squad"].unique())
-
-        team = st.selectbox(
-            "Team",
-            ["All"] + equipos,
-            key="list_team_filter"
-        )
-
-        # Filtrar jugadores por liga y equipo
-        jugadores_filtro = list_df_players.copy()
-
-        if league != "All":
-            jugadores_filtro = jugadores_filtro[jugadores_filtro["stats_Comp"] == league]
-
-        if team != "All":
-            jugadores_filtro = jugadores_filtro[jugadores_filtro["stats_Squad"] == team]
-
-        # Seleccionar posición
-        posiciones_unicas = list(jugadores_filtro["stats_Pos"].unique())
-        posiciones_disponibles = [p for p in pos_order if p in posiciones_unicas]
-
-        pos = st.selectbox(
-            "Position",
-            ["All"] + posiciones_disponibles,
-            key="list_pos_filter"
-        )
-
-        if pos != "All":
-            jugadores_filtro = jugadores_filtro[jugadores_filtro["stats_Pos"] == pos]
-
-        # Seleccionar jugador
-        player_to_add = st.selectbox(
-            "Select Player",
-            ["Select"] + list(jugadores_filtro["Player"]),
-            key="list_player_to_add"
+        # Aplicar filtros reutilizables de liga, equipo, posición y jugador
+        list_league, list_team, list_pos, list_player_to_add, list_players_filtered = apply_player_filters_lineup_list(
+            df=list_df_players,
+            league_key="list_league_filter",
+            team_key="list_team_filter",
+            pos_key="list_pos_filter",
+            player_key="list_player_to_add",
+            pos_order=pos_order
         )
 
         # Crear formulario de scouting
@@ -322,40 +285,32 @@ def page_list():
             # Procesar envío
             if submitted:
 
-                # Validar campos
-                if league == "All":
+                if list_league == "All":
                     st.warning("Please select a league.")
-                elif team == "All":
+                elif list_team == "All":
                     st.warning("Please select a team.")
-                elif pos == "All":
+                elif list_pos == "All":
                     st.warning("Please select a position.")
-                elif player_to_add == "Select":
-                    st.warning("Please select a player.")    
+                elif list_player_to_add == "Select":
+                    st.warning("Please select a player.")
                 elif user_selected == "Select":
                     st.warning("Please select a user.")
                 elif list_choice == "Select":
                     st.warning("Please select a list.")
-
                 else:
-
-                    # Construir objeto jugador
                     player_data = {
-
-                        "Player": player_to_add,
+                        "Player": list_player_to_add,
                         "User": user_selected,
-                        "League": league,
-                        "Team": team,
-                        "Position": pos,
+                        "League": list_league,
+                        "Team": list_team,
+                        "Position": list_pos,
                         "List": list_choice,
                         "Comment": comment,
                         "Note": note
                     }
 
-                    # Guardar jugador
                     save_player_to_excel(player_data, list_choice)
-
-                    # Confirmar guardado
-                    st.success(f"Player saved: {player_to_add}")
+                    st.success(f"Player saved: {list_player_to_add}")
     
     # Crear botón de reset
     if st.button("🔄 Reset Filters"):

@@ -21,10 +21,11 @@ from common.config import (
     ASSETSIMG, ASSETSFONTS
 )
 
-# Importar funciones de datos y marca de agua
+# Importar funciones de datos y filtros
 from controllers.db_controller import load_stats_players_fbref
 from common.pdf_utils import get_watermark
 from common.plots import generate_radar_matplotlib
+from common.filters import apply_player_filters_radar
     
 # Función que da cómo resultado la página Radar
 def page_radar(): 
@@ -94,11 +95,11 @@ def page_radar():
         "leagueA": "All",
         "teamA": "All",
         "posA": "All",
-        "playerA": "All",
+        "playerA": "Select",
         "leagueB": "All",
         "teamB": "All",
         "posB": "All",
-        "playerB": "All",
+        "playerB": "Select",
         "radar_do_reset": False,          
         "chart_type": "",
         "method": "",
@@ -118,11 +119,11 @@ def page_radar():
         st.session_state["leagueA"] = "All"
         st.session_state["teamA"] = "All"
         st.session_state["posA"] = "All"
-        st.session_state["playerA"] = "All"
+        st.session_state["playerA"] = "Select"
         st.session_state["leagueB"] = "All"
         st.session_state["teamB"] = "All"
         st.session_state["posB"] = "All"
-        st.session_state["playerB"] = "All"
+        st.session_state["playerB"] = "Select"
         
         # Reiniciar input de stat
         st.session_state["typed_stat_radar"] = ""
@@ -138,41 +139,23 @@ def page_radar():
     radar_col1, radar_col2, radar_col3 = st.columns([1.5, 2.5, 1.5])
 
     # Definir orden de posiciones
-    pos_order = ["All", "GK", "DF", "MF", "FW"]  
+    pos_order = ["GK", "DF", "MF", "FW"]
 
     # Construir formularios de jugadores A y B
     with radar_col1:
         st.subheader("Player A")
 
-        # Seleccionar liga A
-        leaguesA = ["All"] + sorted(radar_df["stats_Comp"].unique())
-        leagueA = st.selectbox("League A", leaguesA, index=0, key="leagueA")
-
-        # Seleccionar equipo A
-        if leagueA == "All":
-            teamsA = ["All"] + sorted(radar_df["stats_Squad"].unique())
-        else:
-            teamsA = ["All"] + sorted(radar_df[radar_df["stats_Comp"] == leagueA]["stats_Squad"].unique())
-        teamA = st.selectbox("Team A", teamsA, index=0, key="teamA")
-
-        # Seleccionar posición A
-        if leagueA == "All" and teamA == "All":
-            available_posA = radar_df["stats_Pos"].unique()
-        elif teamA == "All":
-            available_posA = radar_df[radar_df["stats_Comp"] == leagueA]["stats_Pos"].unique()
-        else:
-            available_posA = radar_df[(radar_df["stats_Comp"] == leagueA) & (radar_df["stats_Squad"] == teamA)]["stats_Pos"].unique()
-        available_posA = ["All"] + [p for p in pos_order if p in available_posA]
-        posA = st.selectbox("Position A", available_posA, index=0, key="posA")
-
-        # Filtrar jugadores A
-        playersA_df = radar_df.copy()
-        if leagueA != "All":
-            playersA_df = playersA_df[playersA_df["stats_Comp"] == leagueA]
-        if teamA != "All":
-            playersA_df = playersA_df[playersA_df["stats_Squad"] == teamA]
-        if posA != "All":
-            playersA_df = playersA_df[playersA_df["stats_Pos"] == posA]
+        # Aplicar filtros para jugador A y obtener DataFrame filtrado
+        leagueA, teamA, posA, playersA_df = apply_player_filters_radar(
+            df=radar_df,
+            league_key="leagueA",
+            team_key="teamA",
+            pos_key="posA",
+            league_label="League A",
+            team_label="Team A",
+            pos_label="Position A",
+            pos_order=pos_order
+        )
 
         # Agrupar jugadores y sumar minutos
         players_info_A = (
@@ -198,45 +181,27 @@ def page_radar():
         # Seleccionar jugador A
         playerA_label = st.selectbox(
             "Player A",
-            ["All"] + list(label_to_player_A.keys()),
+            ["Select"] + list(label_to_player_A.keys()),
             index=0,
             key="playerA"
         )
 
-        playerA = label_to_player_A[playerA_label] if playerA_label != "All" else "All"
+        playerA = label_to_player_A[playerA_label] if playerA_label != "Select" else None
 
     with radar_col3:
         st.subheader("Player B")
 
-        # Seleccionar liga B
-        leaguesB = ["All"] + sorted(radar_df["stats_Comp"].unique())
-        leagueB = st.selectbox("League B", leaguesB, index=0, key="leagueB")
-
-        # Seleccionar equipo B
-        if leagueB == "All":
-            teamsB = ["All"] + sorted(radar_df["stats_Squad"].unique())
-        else:
-            teamsB = ["All"] + sorted(radar_df[radar_df["stats_Comp"] == leagueB]["stats_Squad"].unique())
-        teamB = st.selectbox("Team B", teamsB, index=0, key="teamB")
-
-        # Seleccionar posición B
-        if leagueB == "All" and teamB == "All":
-            available_posB = radar_df["stats_Pos"].unique()
-        elif teamB == "All":
-            available_posB = radar_df[radar_df["stats_Comp"] == leagueB]["stats_Pos"].unique()
-        else:
-            available_posB = radar_df[(radar_df["stats_Comp"] == leagueB) & (radar_df["stats_Squad"] == teamB)]["stats_Pos"].unique()
-        available_posB = ["All"] + [p for p in pos_order if p in available_posB]
-        posB = st.selectbox("Position B", available_posB, index=0, key="posB")
-
-        # Filtrar jugadores B
-        playersB_df = radar_df.copy()
-        if leagueB != "All":
-            playersB_df = playersB_df[playersB_df["stats_Comp"] == leagueB]
-        if teamB != "All":
-            playersB_df = playersB_df[playersB_df["stats_Squad"] == teamB]
-        if posB != "All":
-            playersB_df = playersB_df[playersB_df["stats_Pos"] == posB]
+        # Aplicar filtros para jugador B y obtener DataFrame filtrado
+        leagueB, teamB, posB, playersB_df = apply_player_filters_radar(
+            df=radar_df,
+            league_key="leagueB",
+            team_key="teamB",
+            pos_key="posB",
+            league_label="League B",
+            team_label="Team B",
+            pos_label="Position B",
+            pos_order=pos_order
+        )
 
         # Agrupar jugadores y sumar minutos
         players_info_B = (
@@ -262,13 +227,13 @@ def page_radar():
         # Seleccionar jugador B
         playerB_label = st.selectbox(
             "Player B",
-            ["All"] + list(label_to_player_B.keys()),
+            ["Select"] + list(label_to_player_B.keys()),
             index=0,
             key="playerB"
         )
 
-        playerB = label_to_player_B[playerB_label] if playerB_label != "All" else "All"
-        
+        playerB = label_to_player_B[playerB_label] if playerB_label != "Select" else None
+
     # Espacio para el gráfico
     with radar_col2:
         st.subheader("Pizza Chart")

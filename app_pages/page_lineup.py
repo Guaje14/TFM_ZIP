@@ -19,9 +19,10 @@ from common.config import (
     ASSETSIMG, DATA_DIR, ASSETSFONTS
 )
 
-# Importar funciones de datos y marca de agua
+# Importar funciones de datos y filtros
 from controllers.db_controller import load_stats_players_fbref
 from common.pdf_utils import get_watermark
+from common.filters import apply_player_filters_lineup_list
     
 # Función que da cómo resultado la página Lineup
 def page_lineup():
@@ -176,7 +177,7 @@ def page_lineup():
     }
     
     # Definir orden fijo de posiciones
-    pos_order = ["All", "GK", "DF", "MF", "FW"]  
+    pos_order = ["GK", "DF", "MF", "FW"]
 
     # Definir diccionario con valores por defecto de la alineación
     lineup_defaults = {
@@ -187,7 +188,7 @@ def page_lineup():
         "lineup_players": [None]*11,
         "lineup_player_to_add": "Select",
         "lineup_matchday": 1,
-        "lineup_selected_pos": None,
+        "lineup_selected_pos": 0,
         
         "lineup_do_reset": False
     }
@@ -233,84 +234,16 @@ def page_lineup():
         
         # Obtener coordenadas según sistema seleccionado
         lineup_pos_coords = lineup_posiciones[lineup_sistema]
-        
-        # Crear selector de liga
-        league_options = ["All"] + sorted(lineup_df_players["stats_Comp"].unique())
-        league_index = league_options.index(st.session_state.get("lineup_league_filter", "All"))
-        
-        lineup_league = st.selectbox(
-            "League",
-            league_options,
-            index=league_index
+
+        # Aplicar filtros reutilizables de liga, equipo, posición y jugador
+        lineup_league, lineup_team, lineup_pos, lineup_player, filtered_players = apply_player_filters_lineup_list(
+            df=lineup_df_players,
+            league_key="lineup_league_filter",
+            team_key="lineup_team_filter",
+            pos_key="lineup_pos_filter",
+            player_key="lineup_player_to_add",
+            pos_order=pos_order
         )
-        
-        # Guardar liga seleccionada en sesión
-        st.session_state["lineup_league_filter"] = lineup_league
-
-        # Obtener lista de equipos filtrados por liga
-        teams = sorted(lineup_df_players[lineup_df_players["stats_Comp"]==lineup_league]["stats_Squad"].unique()) \
-                if lineup_league != "All" else sorted(lineup_df_players["stats_Squad"].unique())
-        
-        # Definir opciones de equipos
-        team_options = ["All"] + teams
-        
-        # Validar índice del equipo seleccionado previamente
-        team_index = team_options.index(st.session_state["lineup_team_filter"]) \
-            if st.session_state.get("lineup_team_filter") in team_options else 0
-        
-        # Crear selector de equipo
-        lineup_team = st.selectbox(
-            "Team",
-            team_options,
-            index=team_index
-        )
-        
-        # Guardar equipo seleccionado en sesión
-        st.session_state["lineup_team_filter"] = lineup_team
-
-        # Filtrar jugadores por liga y equipo
-        filtered_players = lineup_df_players.copy()
-        if lineup_league != "All":
-            filtered_players = filtered_players[filtered_players["stats_Comp"] == lineup_league]
-        if lineup_team != "All":
-            filtered_players = filtered_players[filtered_players["stats_Squad"] == lineup_team]
-
-        # Crear selector de posición
-        available_positions = [p for p in pos_order if p in filtered_players["stats_Pos"].unique()]
-        pos_options = ["All"] + available_positions
-        
-        # Validar índice de posición seleccionado
-        pos_index = pos_options.index(st.session_state.get("lineup_pos_filter", "All")) \
-            if st.session_state.get("lineup_pos_filter") in pos_options else 0
-        
-        lineup_pos = st.selectbox(
-            "Position",
-            pos_options,
-            index=pos_index
-        )
-        
-        # Guardar posición seleccionada en sesión
-        st.session_state["lineup_pos_filter"] = lineup_pos
-
-        # Filtrar jugadores por posición
-        if lineup_pos != "All":
-            filtered_players = filtered_players[filtered_players["stats_Pos"] == lineup_pos]
-
-        # Crear selector de jugador
-        players_list = ["Select"] + list(filtered_players["Player"])
-        
-        # Validar índice del jugador seleccionado
-        player_index = players_list.index(st.session_state["lineup_player_to_add"]) \
-            if st.session_state.get("lineup_player_to_add") in players_list else 0
-        
-        lineup_player = st.selectbox(
-            "Player",
-            players_list,
-            index=player_index
-        )
-        
-        # Guardar jugador seleccionado en sesión
-        st.session_state["lineup_player_to_add"] = lineup_player
 
         # Crear selector de jornada
         lineup_matchday = st.slider(
@@ -340,7 +273,7 @@ def page_lineup():
 
         # Crear botón para asignar jugador con validación previa
         if st.button("Assign players"):
-            if lineup_league=="All" or lineup_team=="All" or lineup_pos=="All" or lineup_player=="Select":
+            if lineup_league == "All" or lineup_team == "All" or lineup_pos == "All" or lineup_player == "Select":
                 st.warning("Please select League, Team, Position, and Player before assigning.")
             else:
                 # Asignar jugador a la posición seleccionada
@@ -350,20 +283,13 @@ def page_lineup():
         # Crear botón para guardar alineación
         if st.button("Save lineup"):
 
-            # Preparar estructura de datos para almacenar la alineación
             lineup_data = []
-
-            # Generar identificador único para la alineación
             lineup_id = str(uuid.uuid4())
 
-            # Recorrer jugadores seleccionados en la sesión
             for i, p in enumerate(st.session_state.get("lineup_players", [])):
-                
                 if p:
-                    # Obtener coordenadas de la posición
                     coord = lineup_pos_coords[i]
-                    
-                    # Añadir registro de jugador a la lista
+
                     lineup_data.append({
                         "Lineup_Id": lineup_id,
                         "Jornada": lineup_matchday,
@@ -377,25 +303,19 @@ def page_lineup():
                         "Usuario": st.session_state["user"].username
                     })
 
-            # Concatenar nuevos datos con los existentes si el DataFrame no está vacío
             if not df_save.empty:
                 df_save = pd.concat([df_save, pd.DataFrame(lineup_data)], ignore_index=True)
             else:
-                # Crear nuevo DataFrame si no existen datos previos
                 df_save = pd.DataFrame(lineup_data)
 
-            # Guardar datos en archivo Excel
             df_save.to_excel(filename, index=False, engine="openpyxl")
 
-            # Mostrar mensaje de confirmación
             st.success(f"Lineup saved with ID: {lineup_id}")
 
-            # Preparar archivo Excel en memoria para descarga
             with BytesIO() as output:
                 df_save.to_excel(output, index=False, engine="openpyxl")
                 output.seek(0)
-                
-                # Crear botón de descarga del archivo Excel
+
                 st.download_button(
                     "📥 Download Excel",
                     data=output,
@@ -405,18 +325,7 @@ def page_lineup():
 
         # Crear botón para reiniciar la alineación
         if st.button("🔄 Reset"):
-            
-            # Restablecer valores por defecto en la sesión
-            st.session_state["lineup_sistema"] = lineup_sistemas[0]
-            st.session_state["lineup_league_filter"] = "All"
-            st.session_state["lineup_team_filter"] = "All"
-            st.session_state["lineup_pos_filter"] = "All"
-            st.session_state["lineup_players"] = [None]*11
-            st.session_state["lineup_player_to_add"] = "Select"
-            st.session_state["lineup_matchday"] = 1
-            st.session_state["lineup_selected_pos"] = 0
-            
-            # Recargar aplicación
+            st.session_state["lineup_do_reset"] = True
             st.rerun()
 
     with lineup_field_col:
