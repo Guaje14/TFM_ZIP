@@ -1,0 +1,15 @@
+streamlit
+pandas
+fpdf2>=2.8.5
+requests
+Pillow
+matplotlib
+plotly
+numpy
+openpyxl
+python-dotenv
+IPython
+scipy
+sqlalchemy
+psycopg2-binary
+bcrypt

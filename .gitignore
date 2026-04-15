@@ -1,0 +1,15 @@
+# Ignorar carpetas de cache de Python
+__pycache__/
+*/__pycache__/
+
+# Ignorar archivos compilados de Python
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar archivos de configuración y datos sensibles
+.streamlit/secrets.toml
+.env
+data/users.xlsx
+data/users backup.xlsx
+data/access_log.xlsx
